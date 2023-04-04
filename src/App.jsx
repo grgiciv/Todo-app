@@ -1,10 +1,9 @@
 import { useState } from 'react'
+import { TodoItem } from './components/TodoItem';
+import { TodoItemForm } from './components/TodoItemForm';
 
 function App() {
   const [items, setItems] = useState([]);
-  const [formState, setFormState] = useState({
-    text:'',
-  });
   const [sort, setSort] = useState("createdAtDesc");
 
   const handleSortChange = (event) => {
@@ -18,20 +17,28 @@ function App() {
     });
   }
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setItems([
-      //kopira sve iteme i kreira novi item tako da ...items rasprsi array i na kraju doda novi objekt
-      ...items,
-      {
-        id: Date.now(),
-        text: formState.text,
-        done: false,
-        createdAt: Date.now(),
-      }
-    ]);
-    setFormState({ ...formState, text: '' });
+  const handleCreateItem = (item) => {
+    setItems([...items, item]);   //kopira sve iteme i kreira novi item tako da ...items rasprsi array i na kraju doda novi objekt
   }
+
+  const handleClearItems = () => {
+    setItems([]);
+  }
+
+  const handleMarkItemAsDone = (id, done) => {
+    setItems(items.map(newItem => {
+      if (newItem.id === id) {
+        return { ...newItem, done: !done };
+      }
+      return newItem;
+    }));
+  };
+
+  const handleDeleteItem = (id) => {
+    setItems (items.filter(newItem => {
+      return newItem.id !== id;
+    }));
+  };
 
   const itemComponents = items
     .sort((a, b) => {
@@ -41,38 +48,16 @@ function App() {
       return b.createdAt - a.createdAt;
     })
     .map(item => {
-      const handleChange = () => {
-        console.log('handle change for item', item);
-        setItems(items.map(newItem => {
-          if (newItem.id === item.id) {
-            return { ...newItem, done: !item.done };
-          }
-          return newItem;
-        }))
-    };
-
-    const handleClick = () => {
-      setItems (items.filter(newItem => {
-        return newItem.id !== item.id;
-      }));
-    };
-
-    return (
-      <div key={item.id}>
-        <input type="checkbox" checked={item.done} onChange={handleChange}/>
-        {item.text} ({new Date(item.createdAt).toUTCString()})
-        <button onClick={handleClick}>X</button>
-      </div>
-    )
+      return <TodoItem key={item.id} id={item.id} done={item.done} text={item.text} createdAt={item.createdAt}
+        onDeleteItem={handleDeleteItem} onMarkItemsAsDone={handleMarkItemAsDone} />
+      
   });
 
   return (
     <div>
       <h1>TODO APP</h1>
-      <form onSubmit={handleSubmit}>
-        <input type="text" name="text" value={formState.text} onChange={handleChange}></input>
-        <button type='submit'>Add item</button>
-      </form>
+      <TodoItemForm onCreateItem={handleCreateItem} />
+      <button onClick={handleClearItems}>Clear</button>
       <select onChange={handleSortChange} defaultValue={sort}>
         <option value="createdAtAsc">Created at (ascending)</option>
         <option value="createdAtDesc">Created at (descending)</option>
